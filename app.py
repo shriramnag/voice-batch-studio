@@ -83,3 +83,4 @@ with gr.Blocks(theme='shivi/calm_cyan') as demo:
     gen_btn.click(generate_voice, [voice_in, script_in, emotion_opt, speed_sl, lang_opt, silence_btn], [audio_out, status])
 
 demo.launch(share=True)
+
