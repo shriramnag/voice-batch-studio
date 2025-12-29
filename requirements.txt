@@ -1,3 +1,5 @@
 coqui-tts
 gradio
 pydub
+torchcodec
+transformers==4.46.3
