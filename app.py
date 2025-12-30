@@ -1,54 +1,65 @@
-# Version 0.181.11-release
+# Version 0.181.12-release
 import os
 import gradio as gr
 from TTS.api import TTS
 import torch
 import time
+from pydub import AudioSegment, effects
 
-# नियमों को स्वीकार करना और CPU ऑप्टिमाइज़ेशन
+# नियमों को स्वीकार करना और CPU/GPU ऑप्टिमाइज़ेशन
 os.environ["COQUI_TOS_AGREED"] = "1"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# स्पीड को 100% तक बढ़ाने के लिए CPU थ्रेड्स को मैक्सिमम पर सेट करना
 if device == "cpu":
     torch.set_num_threads(os.cpu_count())
-    torch.set_num_interop_threads(os.cpu_count())
 
-print(f"🚀 टर्बो मोड चालू: {device} | वर्शन: 0.181.11-release")
+print(f"🚀 मोड: {device} | वर्शन: 0.181.12-release")
 
 try:
-    # मॉडल को हाई-परफॉरमेंस मोड में लोड करना
     tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 except Exception as e:
-    print(f"Error: {e}")
+    print(f"मॉडल लोड एरर: {e}")
 
-# --- स्मार्ट स्क्रिप्ट एडिटर (भावनाएं जोड़ने वाला जादू) ---
+# --- सन्नाटा हटाने और आवाज़ निखारने का फंक्शन ---
+def enhance_audio(file_path, remove_silence, enhance):
+    audio = AudioSegment.from_wav(file_path)
+    
+    if remove_silence:
+        # सन्नाटा हटाना
+        audio = effects.strip_silence(audio, silence_thresh=-42, padding=100)
+    
+    if enhance:
+        # आवाज़ को भारी और साफ़ बनाना (Studio Quality)
+        audio = effects.normalize(audio)
+    
+    audio.export(file_path, format="wav")
+    return file_path
+
+# --- स्मार्ट स्क्रिप्ट एडिटर (Suspense Fix) ---
 def smart_editor(text, style):
     if not text: return text
     
     hooks = {
-        "सस्पेंस (Suspense)": "शुरुआत: क्या आपको पता है? एक ऐसी कहानी जिसने सबको हिला दिया... \n\n",
-        "भावुक (Emotional)": "शुरुआत: दिल को छू लेने वाली एक दास्ताँ, जो शायद आपकी आँखों में आँसू ले आए... \n\n",
-        "जोशीला (Excited)": "शुरुआत: दोस्तों! आज हम बात करने वाले हैं एक बहुत ही शानदार जानकारी के बारे में! \n\n"
+        "सस्पेंस (Suspense)": "क्या आपको पता है? एक ऐसी अनसुनी कहानी जिसने पूरी दुनिया को हिला कर रख दिया... ",
+        "भावुक (Emotional)": "एक ऐसी दास्ताँ जो शायद आपकी रूह को छू ले और आँखों में नमी भर दे... ",
+        "जोशीला (Excited)": "नमस्कार दोस्तों! तैयार हो जाइए एक बहुत ही रोमांचक सफर पर चलने के लिए! "
     }
     
+    # अब "शुरुआत:" जैसा शब्द नहीं आएगा, सीधा डायलॉग जुड़ेगा
     if style in hooks:
-        new_text = hooks[style] + text
-        # बीच में भावनाओं को बढ़ाने के लिए वाक्यों को सुधारना
-        return new_text.replace(".", "...").replace("।", "...।")
+        return hooks[style] + text
     return text
 
-def generate_voice(voice_sample, script, emotion, speed, language):
+def generate_voice(voice_sample, script, emotion, speed, language, remove_silence, voice_enhance):
     if not voice_sample or not script:
-        return None, "❌ कृपया सैंपल और स्क्रिप्ट डालें!"
+        return None, "❌ डेटा अधूरा है!"
     
-    # हकलाना और दूसरी भाषा का असर खत्म करने के लिए सख्त क्लीनिंग
+    # AI Error फिक्स करने के लिए टेक्स्ट क्लीनिंग
     clean_text = script.replace("\n", " ").strip()
-    output_path = f"vbs_turbo_{int(time.time())}.wav"
+    output_path = f"vbs_final_{int(time.time())}.wav"
     
     try:
         start_time = time.time()
-        # हाई-स्पीड टर्बो जनरेशन
         tts.tts_to_file(
             text=clean_text,
             speaker_wav=voice_sample,
@@ -56,49 +67,51 @@ def generate_voice(voice_sample, script, emotion, speed, language):
             file_path=output_path,
             emotion=emotion,
             speed=speed,
-            enable_text_splitting=True,
-            # हकलाना और भाषा भटकाव रोकने के लिए पैरामीटर्स
-            temperature=0.65, 
-            repetition_penalty=10.0,
-            top_p=0.85
+            enable_text_splitting=True
         )
+        
+        # एक्स्ट्रा फीचर्स: सन्नाटा हटाना और आवाज़ निखारना
+        final_file = enhance_audio(output_path, remove_silence, voice_enhance)
+        
         duration = round(time.time() - start_time, 2)
-        return output_path, f"✅ टर्बो जनरेशन सफल! समय: {duration}s"
+        return final_file, f"✅ सफलता! समय: {duration}s"
     except Exception as e:
-        return None, f"❌ AI एरर: {str(e)}"
+        return None, f"❌ AI Error Fix Needed: {str(e)}"
 
-# --- प्रीमियम 2026 डार्क इंटरफ़ेस ---
-with gr.Blocks(theme=gr.themes.Default(primary_hue="orange", neutral_hue="zinc")) as demo:
-    gr.Markdown("# 🎙️ **VoiceBatch Studio: TURBO 2026**")
-    gr.Markdown("### *Version 0.181.11-release | 100% Speed Boost Enabled*")
+# --- इंटरफ़ेस ---
+with gr.Blocks(theme=gr.themes.Soft(primary_hue="orange")) as demo:
+    gr.Markdown("# 🎙️ **VoiceBatch Studio Pro v0.181.12**")
     
     with gr.Row():
         with gr.Column(scale=1):
-            gr.Markdown("### ⚙️ **टर्बो सेटिंग्स**")
-            voice_in = gr.Audio(label="अपना स्पष्ट सैंपल दें", type="filepath")
+            gr.Markdown("### ⚙️ **कंट्रोल पैनल**")
+            voice_in = gr.Audio(label="अपना सैंपल दें", type="filepath")
             
             with gr.Row():
-                lang_opt = gr.Dropdown(choices=["hi", "en"], value="hi", label="🌍 भाषा (Strict Mode)")
+                lang_opt = gr.Dropdown(choices=["hi", "en"], value="hi", label="🌍 भाषा")
                 emotion_opt = gr.Dropdown(choices=["Neutral", "Sad", "Happy", "Angry", "Excited"], value="Neutral", label="🎭 इमोशन")
             
-            speed_sl = gr.Slider(0.7, 1.5, 1.0, step=0.01, label="⏩ स्पीड कंट्रोलर")
-            gen_btn = gr.Button("🚀 GENERATE (TURBO SPEED)", variant="primary")
+            speed_sl = gr.Slider(0.7, 1.4, 1.0, step=0.01, label="⏩ स्पीड कंट्रोल")
+            
+            # आपकी डिमांड वाले बटन यहाँ हैं
+            silence_btn = gr.Checkbox(label="🤫 सन्नाटा हटाएं (Silence Remover)", value=True)
+            enhance_btn = gr.Checkbox(label="✨ आवाज़ निखारें (Voice Enhancer)", value=True)
+            
+            gen_btn = gr.Button("🚀 GENERATE VOICE", variant="primary")
             status = gr.Textbox(label="सिस्टम स्टेटस", interactive=False)
 
         with gr.Column(scale=2):
-            gr.Markdown("### 🪄 **स्मार्ट AI स्क्रिप्ट एडिटर**")
+            gr.Markdown("### 🪄 **स्मार्ट एडिटर**")
             with gr.Row():
-                script_style = gr.Dropdown(["सामान्य", "सस्पेंस (Suspense)", "भावुक (Emotional)", "जोशीला (Excited)"], value="सामान्य", label="अंदाज़ चुनें")
-                improve_btn = gr.Button("🪄 Auto-Improve Script (Add Emotions)")
+                script_style = gr.Dropdown(["सामान्य", "सस्पेंस (Suspense)", "भावुक (Emotional)", "जोशीला (Excited)"], value="सामान्य", label="अंदाज़")
+                improve_btn = gr.Button("🪄 Improve Script")
             
-            script_in = gr.Textbox(label="यहाँ अपनी कहानी लिखें", lines=15, placeholder="लंबी स्क्रिप्ट पेस्ट करें...")
-            
-            # स्मार्ट एडिटर बटन का काम
+            script_in = gr.Textbox(label="स्क्रिप्ट", lines=15)
             improve_btn.click(smart_editor, [script_in, script_style], script_in)
             
-            gr.Markdown("### 🎧 **फाइनल वॉइस ओवर**")
+            gr.Markdown("### 🎧 **आउटपुट**")
             audio_out = gr.Audio(label="सुनें और डाउनलोड करें", type="filepath")
 
-    gen_btn.click(generate_voice, [voice_in, script_in, emotion_opt, speed_sl, lang_opt], [audio_out, status])
+    gen_btn.click(generate_voice, [voice_in, script_in, emotion_opt, speed_sl, lang_opt, silence_btn, enhance_btn], [audio_out, status])
 
 demo.launch(share=True)
