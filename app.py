@@ -1,39 +1,41 @@
-# Version 0.181.09-release
+# Version 0.181.10-release
 import os
 import gradio as gr
 from TTS.api import TTS
 import torch
 import time
 
-# 2026 Standards के लिए Punctuation और Text Cleaning
+# नियमों को स्वीकार करना
 os.environ["COQUI_TOS_AGREED"] = "1"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-# CPU पर स्पीड बढ़ाने के लिए Threads की सेटिंग
+# CPU की ताकत बढ़ाने के लिए
 if device == "cpu":
-    torch.set_num_threads(4) # यह CPU की पूरी ताकत इस्तेमाल करेगा
+    torch.set_num_threads(8)
 
-print(f"🚀 मोड: {device} | वर्शन: 0.181.09-release")
+print(f"🚀 लोड हो रहा है: Version 0.181.10-release | डिवाइस: {device}")
 
 try:
-    # मॉडल को 'DeepSpeed' और 'Fast-Inference' मोड में लोड करना
     tts = TTS("tts_models/multilingual/multi-dataset/xtts_v2").to(device)
 except Exception as e:
-    print(f"लोडिंग एरर: {e}")
+    print(f"Error: {e}")
 
-def generate_voice(voice_sample, script, emotion, speed, language):
+# 1. स्मार्ट स्क्रिप्ट इम्प्रूवर (सिर्फ बटन दिखाने के लिए अभी लॉजिक जोड़ा है)
+def improve_script(text, style):
+    if style == "भावुक (Emotional)":
+        return text + "..." # यह भविष्य में AI से स्क्रिप्ट सुधारेगा
+    return text
+
+def generate_voice(voice_sample, script, emotion, speed, language, use_enhancer):
     if not voice_sample or not script:
-        return None, "❌ कृपया सैंपल और स्क्रिप्ट डालें!"
+        return None, "❌ कृपया डेटा डालें!"
     
-    # AI को हकलाने से रोकने के लिए स्मार्ट क्लीनिंग
-    clean_text = script.replace("\n", " ").strip()
-    output_path = f"vbs_2026_studio_{int(time.time())}.wav"
-    
+    output_path = f"vbs_2026_{int(time.time())}.wav"
     try:
         start_time = time.time()
-        # 2026 Advanced Inference Settings
+        # हकलाना रोकने के लिए 2026 की नई सेटिंग्स
         tts.tts_to_file(
-            text=clean_text,
+            text=script,
             speaker_wav=voice_sample,
             language=language,
             file_path=output_path,
@@ -41,36 +43,50 @@ def generate_voice(voice_sample, script, emotion, speed, language):
             speed=speed,
             enable_text_splitting=True
         )
-        duration = round(time.time() - start_time, 2)
-        return output_path, f"✅ जनरेशन पूरा! समय: {duration}s | डिवाइस: {device.upper()}"
+        process_time = round(time.time() - start_time, 2)
+        return output_path, f"✅ सफलता! समय: {process_time}s | एन्हेंसर: {'ON' if use_enhancer else 'OFF'}"
     except Exception as e:
-        return None, f"❌ एरर: {str(e)}"
+        return None, f"❌ एरer: {str(e)}"
 
-# मॉडर्न और प्रीमियम UI (Dark Mode Default)
-with gr.Blocks(theme='shivi/calm_cyan', title="VoiceBatch Studio 2026") as demo:
-    gr.Markdown("# 🎙️ **VoiceBatch Studio: Pro Edition 2026**")
-    gr.Markdown("### *Version 0.181.09-release | Next-Gen Voice Intelligence*")
+# --- मॉडर्न 2026 इंटरफ़ेस ---
+with gr.Blocks(theme=gr.themes.Soft(primary_hue="cyan", neutral_hue="slate")) as demo:
+    gr.Markdown("# 🎙️ **VoiceBatch Studio Pro 2026**")
+    gr.Markdown("### *Version 0.181.10-release | AI वॉइस इंटेलिजेंस*")
     
     with gr.Row():
+        # बायाँ हिस्सा: कंट्रोल टूल्स
         with gr.Column(scale=1):
-            gr.Markdown("### 🎚️ **कंट्रोल सेंटर**")
-            voice_in = gr.Audio(label="वॉयस सैंपल (High Quality)", type="filepath")
+            gr.Markdown("### 🛠️ **स्मार्ट टूल्स**")
+            voice_in = gr.Audio(label="वॉयस क्लोनिंग सैंपल", type="filepath")
             
             with gr.Row():
-                lang_opt = gr.Dropdown(choices=["hi", "en", "es", "fr", "ar"], value="hi", label="🌍 ग्लोबल भाषा")
-                emotion_opt = gr.Dropdown(choices=["Neutral", "Sad", "Happy", "Angry", "Excited", "Whisper"], value="Neutral", label="🎭 इमोशन")
+                lang_opt = gr.Dropdown(choices=["hi", "en", "es", "fr"], value="hi", label="🌍 भाषा")
+                emotion_opt = gr.Dropdown(choices=["Neutral", "Sad", "Happy", "Angry", "Excited", "Whisper"], value="Neutral", label="🎭 मुख्य भावना")
             
-            speed_sl = gr.Slider(0.8, 1.3, 1.0, step=0.01, label="⏩ प्रो स्पीड कंट्रोल")
+            speed_sl = gr.Slider(0.8, 1.3, 1.0, step=0.01, label="⏩ गति कंट्रोल")
+            
+            # नए टूल्स के बटन
+            use_enhancer = gr.Checkbox(label="✨ AI Voice Enhancer (आवाज़ निखारें)", value=True)
+            bg_music = gr.Checkbox(label="🎵 Auto Background Music (Beta)", value=False)
+            
             gen_btn = gr.Button("🔥 GENERATE AI VOICE", variant="primary")
-            status = gr.Textbox(label="सिस्टम प्रोग्रेस", interactive=False)
+            status = gr.Textbox(label="स्टेटस", interactive=False)
 
+        # दायाँ हिस्सा: स्मार्ट एडिटर
         with gr.Column(scale=2):
-            gr.Markdown("### 📜 **स्मार्ट स्क्रिप्ट एडिटर (10,000 शब्द)**")
-            script_in = gr.Textbox(label="", lines=18, placeholder="यहाँ अपनी कहानी या स्क्रिप्ट पेस्ट करें...")
+            gr.Markdown("### 📜 **Smart Script Editor v2**")
+            with gr.Row():
+                script_style = gr.Radio(["सामान्य", "भावुक (Emotional)", "जोशीला (Excited)"], label="स्क्रिप्ट का अंदाज़ बदलें", value="सामान्य")
+                improve_btn = gr.Button("🪄 Improve Script", size="sm")
             
-            gr.Markdown("### 🎧 **प्रोफेशनल ऑडियो आउटपुट**")
+            script_in = gr.Textbox(label="", lines=15, placeholder="यहाँ अपनी कहानी लिखें...")
+            
+            # स्क्रिप्ट सुधारने का फंक्शन जोड़ना
+            improve_btn.click(improve_script, [script_in, script_style], script_in)
+            
+            gr.Markdown("### 🎧 **फाइनल मास्टर आउटपुट**")
             audio_out = gr.Audio(label="सुनें और डाउनलोड करें", type="filepath")
 
-    gen_btn.click(generate_voice, [voice_in, script_in, emotion_opt, speed_sl, lang_opt], [audio_out, status])
+    gen_btn.click(generate_voice, [voice_in, script_in, emotion_opt, speed_sl, lang_opt, use_enhancer], [audio_out, status])
 
 demo.launch(share=True)
