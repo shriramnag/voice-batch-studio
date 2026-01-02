@@ -1,11 +1,23 @@
+# Core AI Libraries
 torch>=2.0.1
 torchaudio>=2.0.1
-numpy==1.24.3
-librosa
-gradio==3.38.0
-matcha-tts
-transformers
-sentencepiece
-einops
-vector-quantize-pytorch
-perth
+numpy>=1.24.0,<1.26.0
+librosa==0.11.0
+
+# Essential Tokenizers & Dependencies
+resemble-perth==1.0.1
+s3tokenizer
+transformers==4.46.3
+diffusers==0.29.0
+safetensors==0.5.3
+
+# UI and Processing
+gradio==5.44.1
+pydub
+pyloudnorm
+omegaconf
+
+# Language Specific Support
+spacy-pkuseg
+pykakasi==2.3.0
+conformer==0.3.2
