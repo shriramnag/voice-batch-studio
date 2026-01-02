@@ -1,0 +1,28 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# VoiceBatch Studio specific
+# अगर आप चाहते हैं कि डाउनलोड किए गए मॉडल्स GitHub पर अपलोड न हों
+models/
+output/
+temp/
+*.wav
+*.mp3
+
+# IDEs
+.vscode/
+.idea/
