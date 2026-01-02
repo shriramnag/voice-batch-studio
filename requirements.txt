@@ -11,3 +11,9 @@ safetensors==0.5.3
 omegaconf==2.3.0
 sentencex==0.6.1
 resampy==0.4.3
+chatterbox-tts
+perth
+librosa
+torchaudio
+torch
+gradio
