@@ -1,6 +1,6 @@
 # 🎙️ VoiceBatch Studio Pro
 
-[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/shriramnag/voice-batch-studio/blob/main/VoiceBatch_Studio.ipynb)
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)]([https://colab.research.google.com/github/shriramnag/voice-batch-studio/blob/main/VoiceBatch_Studio.ipynb](https://colab.research.google.com/github/shriramnag/voice-batch-studio/blob/main/VoiceBatch_Studio.ipynb))
 
 AI आधारित वॉयस क्लोनिंग टूल जो लंबी स्क्रिप्ट को बैच में प्रोसेस करता है और अंत में उन्हें एक साथ जोड़ (Merge) देता है।# voice-batch-studio
 AI Voice Cloning with Batch Processing and Auto-Merge
